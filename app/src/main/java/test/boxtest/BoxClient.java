@@ -17,9 +17,8 @@ import com.box.androidsdk.content.models.BoxSession;
 
 import org.json.JSONObject;
 
-import java.io.InputStreamReader;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -29,8 +28,8 @@ public class BoxClient implements BoxAuthentication.AuthListener {
 	private BoxSession session;
 	private String tableFolderId;
 
-	private static final String clientId = "";
-	private static final String clientSecret = "";
+	private static final String clientId = "REPLACE_ME";
+	private static final String clientSecret = "REPLACE_ME";
 
 	public static boolean isAuthenticated(Context context)
 	{
@@ -93,14 +92,16 @@ public class BoxClient implements BoxAuthentication.AuthListener {
 		}
 		catch (Exception ex)
 		{
+			int x = 5;
+			x++;
 
 		}
 	}
 
 	private void getTableFolderStructure()
 	{
-		String rootFolder = createFolder("0", "__EpiInfo");
-		tableFolderId = createFolder(rootFolder, "Survey_Final");
+		String rootFolder = createFolder("0", "ROOT");
+		tableFolderId = createFolder(rootFolder, "MY_DATA");
 	}
 
 
@@ -160,30 +161,24 @@ public class BoxClient implements BoxAuthentication.AuthListener {
 	}
 
 	public JSONObject getData(BoxItemInfo item) {
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		try {
 			BoxApiFile fileApi = new BoxApiFile(session);
-
-			StringBuilder builder = new StringBuilder();
-
-			PipedOutputStream po = new PipedOutputStream();
-			PipedInputStream pi = new PipedInputStream(po);
-
-			fileApi.getDownloadRequest(po, item.getId()).send();
-			int i;
-			po.close();
-			InputStreamReader s = new InputStreamReader(pi);
-
-			//GZIPInputStream s = new GZIPInputStream(pi);
-			while ((i = s.read()) != -1) {
-				builder.append((char) i);
-			}
-			pi.close();
-			s.close();
-
-			return new JSONObject(builder.toString());
-
+			fileApi.getDownloadRequest(output, item.getId()).send();
+			String json = new String(output.toByteArray());
+			return new JSONObject(json);
 		} catch (Exception e) {
 			return null;
+		}
+		finally
+		{
+			try {
+				output.close();
+			}
+			catch (IOException ex)
+			{
+
+			}
 		}
 	}
 
